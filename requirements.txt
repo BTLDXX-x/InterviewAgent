@@ -1,0 +1,9 @@
+# 项目依赖
+openai
+langchain
+langchain-openai
+python-dotenv
+chromadb
+langchain-chroma
+langchain-text-splitters
+langchain-community
