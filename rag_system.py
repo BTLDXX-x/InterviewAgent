@@ -11,7 +11,8 @@ class RAGSystem:
         # 初始化向量数据库
         self.embeddings = OpenAIEmbeddings(
             api_key=OPENAI_API_KEY,
-            base_url=OPENAI_API_BASE
+            base_url=OPENAI_API_BASE,
+            model="text-embedding-3-small"
         )
         self.vector_db = None
     

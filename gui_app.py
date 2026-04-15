@@ -61,36 +61,60 @@ class InterviewGUI(tk.Tk):
         
         # 移除标题
         
-        # 主题选择区域
-        topic_frame = tk.Frame(top_frame, bg=self.colors["background"])
-        topic_frame.pack(fill=tk.X, pady=(12, 0))
+        # 应聘者信息输入区域
+        info_frame = tk.Frame(top_frame, bg=self.colors["background"])
+        info_frame.pack(fill=tk.X, pady=(12, 0))
         
-        topic_label = tk.Label(
-            topic_frame, 
-            text="面试主题:", 
+        # 姓名输入
+        name_label = tk.Label(
+            info_frame, 
+            text="姓名:", 
             font=self.fonts["body"],
             fg=self.colors["text"]
         )
-        topic_label.pack(side=tk.LEFT, padx=12)
+        name_label.pack(side=tk.LEFT, padx=12)
         
-        self.topic_var = tk.StringVar()
-        self.topic_var.set(INTERVIEW_TOPICS[0])
-        
-        topic_option = tk.OptionMenu(topic_frame, self.topic_var, *INTERVIEW_TOPICS)
-        topic_option.config(
+        self.name_var = tk.StringVar()
+        name_entry = tk.Entry(
+            info_frame, 
+            textvariable=self.name_var,
             font=self.fonts["body"],
             bg=self.colors["surface"],
             fg=self.colors["text"],
             relief=tk.FLAT,
             bd=0,
-            highlightthickness=0
+            highlightthickness=0,
+            width=20
         )
-        topic_option.pack(side=tk.LEFT, padx=12)
+        name_entry.pack(side=tk.LEFT, padx=12)
+        
+        # 应聘岗位输入
+        position_label = tk.Label(
+            info_frame, 
+            text="应聘岗位:", 
+            font=self.fonts["body"],
+            fg=self.colors["text"]
+        )
+        position_label.pack(side=tk.LEFT, padx=12)
+        
+        self.position_var = tk.StringVar()
+        position_entry = tk.Entry(
+            info_frame, 
+            textvariable=self.position_var,
+            font=self.fonts["body"],
+            bg=self.colors["surface"],
+            fg=self.colors["text"],
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=0,
+            width=30
+        )
+        position_entry.pack(side=tk.LEFT, padx=12)
         
         # 简历上传按钮
         self.resume_path = None
         resume_button = tk.Button(
-            topic_frame, 
+            top_frame, 
             text="上传简历", 
             command=self.upload_resume, 
             font=self.fonts["button"],
@@ -107,7 +131,7 @@ class InterviewGUI(tk.Tk):
         
         # 开始面试按钮
         start_button = tk.Button(
-            topic_frame, 
+            top_frame, 
             text="开始面试", 
             command=self.start_interview, 
             font=self.fonts["button"],
@@ -124,7 +148,7 @@ class InterviewGUI(tk.Tk):
         
         # 结束面试按钮
         self.end_button = tk.Button(
-            topic_frame, 
+            top_frame, 
             text="结束面试", 
             command=self.finish_interview, 
             font=self.fonts["button"],
@@ -279,6 +303,18 @@ class InterviewGUI(tk.Tk):
             messagebox.showinfo("提示", "面试已经开始，请完成当前面试后再开始新的面试。")
             return
         
+        # 获取应聘者信息
+        name = self.name_var.get().strip()
+        position = self.position_var.get().strip()
+        
+        if not name:
+            messagebox.showinfo("提示", "请输入姓名。")
+            return
+        
+        if not position:
+            messagebox.showinfo("提示", "请输入应聘岗位。")
+            return
+        
         # 重置面试状态
         self.interviewer = InterviewerAgent(resume_path=self.resume_path)
         self.current_topic_index = 0
@@ -292,7 +328,8 @@ class InterviewGUI(tk.Tk):
         self.chat_text.config(state=tk.NORMAL)
         self.chat_text.delete(1.0, tk.END)
         self.chat_text.insert(tk.END, f"=== AI面试官系统 ===\n", "system")
-        self.chat_text.insert(tk.END, f"欢迎参加面试，系统将根据不同主题进行提问。\n", "body")
+        self.chat_text.insert(tk.END, f"你好，{name}！欢迎参加面试。\n", "body")
+        self.chat_text.insert(tk.END, f"应聘岗位：{position}\n", "body")
         if self.resume_path:
             self.chat_text.insert(tk.END, f"系统已读取你的简历，面试问题将基于你的背景进行定制。\n", "body")
         self.chat_text.insert(tk.END, f"请认真回答每个问题，系统会对你的回答进行评分。\n\n", "body")
@@ -381,12 +418,34 @@ class InterviewGUI(tk.Tk):
         self.chat_text.config(state=tk.NORMAL)
         self.chat_text.insert(tk.END, "=== 评分结果 ===\n", "system")
         self.chat_text.insert(tk.END, f"面试官: \n", "question_label")
-        self.chat_text.insert(tk.END, f"准确性: {score_data['scores']['准确性']}\n", "question_bubble")
-        self.chat_text.insert(tk.END, f"深度: {score_data['scores']['深度']}\n", "question_bubble")
-        self.chat_text.insert(tk.END, f"清晰度: {score_data['scores']['清晰度']}\n", "question_bubble")
-        self.chat_text.insert(tk.END, f"完整性: {score_data['scores']['完整性']}\n", "question_bubble")
-        if '与背景相关性' in score_data['scores']:
-            self.chat_text.insert(tk.END, f"与背景相关性: {score_data['scores']['与背景相关性']}\n", "question_bubble")
+        
+        # 根据主题显示不同的评分维度
+        topic = INTERVIEW_TOPICS[self.current_topic_index]
+        if topic == "AI应用产品经理":
+            # AI应用产品经理的评分维度
+            if '产品规划能力' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"产品规划能力: {score_data['scores']['产品规划能力']}\n", "question_bubble")
+            if 'AI应用能力' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"AI应用能力: {score_data['scores']['AI应用能力']}\n", "question_bubble")
+            if '产品化思维' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"产品化思维: {score_data['scores']['产品化思维']}\n", "question_bubble")
+            if '团队影响力' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"团队影响力: {score_data['scores']['团队影响力']}\n", "question_bubble")
+            if '与背景相关性' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"与背景相关性: {score_data['scores']['与背景相关性']}\n", "question_bubble")
+        else:
+            # 其他技术主题的评分维度
+            if '准确性' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"准确性: {score_data['scores']['准确性']}\n", "question_bubble")
+            if '深度' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"深度: {score_data['scores']['深度']}\n", "question_bubble")
+            if '清晰度' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"清晰度: {score_data['scores']['清晰度']}\n", "question_bubble")
+            if '完整性' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"完整性: {score_data['scores']['完整性']}\n", "question_bubble")
+            if '与背景相关性' in score_data['scores']:
+                self.chat_text.insert(tk.END, f"与背景相关性: {score_data['scores']['与背景相关性']}\n", "question_bubble")
+        
         self.chat_text.insert(tk.END, f"总分: {score_data['total_score']}\n", "question_bubble")
         self.chat_text.insert(tk.END, f"评价: {score_data['feedback']}\n", "question_bubble")
         self.chat_text.insert(tk.END, f"正确答案: {score_data['correct_answer']}\n\n", "question_bubble")
@@ -415,13 +474,83 @@ class InterviewGUI(tk.Tk):
         total_scores = [result['score']['total_score'] for result in self.interview_results]
         overall_score = sum(total_scores) / len(total_scores) if total_scores else 0
         
+        # 生成面试总结
+        position = self.position_var.get() or "未指定"
+        
+        # 提取关键问答
+        key_qa = []
+        low_score_topics = []
+        
+        for i, result in enumerate(self.interview_results):
+            topic = INTERVIEW_TOPICS[i]
+            question = result['question']
+            answer = result['answer']
+            score = result['score']['total_score']
+            
+            key_qa.append(f"{topic}: {question} → {answer}")
+            
+            if score <= 2:
+                low_score_topics.append(f"{topic} (评分: {score})")
+        
+        # 生成面试总结
+        summary = self.generate_interview_summary(position, overall_score, key_qa, low_score_topics)
+        
         # 显示面试总结
         self.chat_text.config(state=tk.NORMAL)
         self.chat_text.insert(tk.END, "=== 面试总结 ===\n", "system")
         self.chat_text.insert(tk.END, f"总体评分: {overall_score:.2f}\n", "body")
+        self.chat_text.insert(tk.END, summary + "\n", "body")
         self.chat_text.insert(tk.END, "面试结束，感谢你的参与！\n", "body")
         self.chat_text.see(tk.END)
         self.chat_text.config(state=tk.DISABLED)
+    
+    def generate_interview_summary(self, position, overall_score, key_qa, low_score_topics):
+        """生成面试总结"""
+        # 构建总结
+        summary_parts = []
+        
+        # 1. 优势总结
+        summary_parts.append("### 优势总结")
+        if overall_score >= 7:
+            summary_parts.append("- 整体表现优秀，对各个面试主题有较好的理解")
+            summary_parts.append("- 回答内容全面，思路清晰")
+            summary_parts.append("- 具备较强的专业知识和表达能力")
+        elif overall_score >= 5:
+            summary_parts.append("- 整体表现基本合格，对部分面试主题有一定理解")
+            summary_parts.append("- 回答内容基本合理，但深度和广度有待提升")
+        else:
+            summary_parts.append("- 整体表现有待提高，需要加强对面试主题的理解")
+        
+        # 2. 风险指出
+        summary_parts.append("\n### 风险指出")
+        if not low_score_topics:
+            if overall_score >= 7:
+                summary_parts.append("- 未发现明显风险，表现较为稳定")
+            elif overall_score >= 5:
+                summary_parts.append("- 部分面试主题的理解不够深入，需要进一步学习")
+            else:
+                summary_parts.append("- 对多个面试主题的理解不足，需要系统学习")
+        else:
+            summary_parts.append(f"- 以下主题表现较差：{', '.join(low_score_topics)}")
+            summary_parts.append("- 需要重点加强这些领域的学习和实践")
+        
+        # 3. 低评分提醒
+        if low_score_topics:
+            summary_parts.append("\n### 重要提醒")
+            summary_parts.append("⚠️ 以下主题评分过低，需要特别关注：")
+            for topic in low_score_topics:
+                summary_parts.append(f"- {topic}")
+        
+        # 4. 录用建议
+        summary_parts.append("\n### 录用建议")
+        if overall_score >= 8:
+            summary_parts.append("✅ 推荐录用：候选人表现优秀，具备岗位所需的专业能力")
+        elif overall_score >= 6:
+            summary_parts.append("⚠️ 谨慎录用：候选人基本符合要求，但需要在某些领域加强")
+        else:
+            summary_parts.append("❌ 不推荐录用：候选人与岗位要求存在较大差距")
+        
+        return "\n".join(summary_parts)
 
 def main():
     app = InterviewGUI()

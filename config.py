@@ -12,6 +12,7 @@ OPENAI_MODEL = 'gpt-3.5-turbo'
 
 # 面试配置
 INTERVIEW_TOPICS = [
+    'AI应用产品经理',
     'AI Agent基础概念',
     '大模型原理与应用',
     'AI Agent开发实践',
